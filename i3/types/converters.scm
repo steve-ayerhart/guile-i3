@@ -15,6 +15,11 @@
                      v))
                   success-hash))))
                               
+(define-public (version-reply->scm reply)
+  (make-i3-version (hash-ref reply "major")
+                    (hash-ref reply "minor")
+                    (hash-ref reply "patch")
+                    (hash-ref reply "human_readable")))
 
 (define-public (workspace-reply->scm reply)
   "stub")
@@ -25,6 +30,4 @@
 (define-public (marks-reply->scm reply)
   "stub")
 (define-public (bar-config-reply->scm reply)
-  "stub")
-(define-public (version-reply->scm reply)
   "stub")
