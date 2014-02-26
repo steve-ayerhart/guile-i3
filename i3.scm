@@ -11,4 +11,6 @@
        ...))))
 
 (re-export-modules (i3 socket)
+                   (i3 types)
+                   (i3 types converters)
                    (i3 subscriptions))
