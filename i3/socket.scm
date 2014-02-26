@@ -1,8 +1,11 @@
 (define-module (i3 socket)
+  #:use-module (i3 types)
+  #:use-module (i3 types converters)
   #:use-module (json)
   #:use-module (rnrs bytevectors)
   #:use-module (rnrs io ports)
-  #:use-module (srfi srfi-1)
+  #:use-module ((srfi srfi-1)
+                #:select (take))
   #:use-module (ice-9 rdelim)
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 receive)
@@ -11,17 +14,32 @@
 (define %i3-header-length 14)
 (define %i3-magic-string "i3-ipc")
 
-(define %i3-message-types '((command . 0)
-                            (get-workspaces . 1)
-                            (subscribe . 2)
-                            (get-outputs . 3)
-                            (get-tree . 4)
-                            (get-marks . 5)
-                            (get-bar-config . 6)
-                            (get-version . 7)))
+(define %i3-message-types '(command
+                            get-workspaces
+                            subscribe
+                            get-outputs
+                            get-tree
+                            get-marks
+                            get-bar-config
+                            get-version))
 
-(define %i3-event-types '((workspace 0)
-                          (output 1)))
+(define %i3-event-types '(workspace output))
+
+(define %reply-parsers '(success-reply->scm
+                         workspaces-reply->scm
+                         success-reply->scm
+                         outputs-reply->scm
+                         tree-reply->scm
+                         marks-reply->scm
+                         bar-config-reply->scm
+                         version-reply->scm))
+
+(define-public (i3-reply->scm type payload)
+  (define reply (json-string->scm (utf8->string payload)))
+  
+  (define reply->scm (list-ref %reply-parsers type))
+  
+  (reply->scm reply))
 
 (define-public current-i3-connection
   (make-parameter #f))
@@ -54,7 +72,7 @@
   (define payload-length (bytevector-length payload-bv))
 
   (bytevector-u32-set! length-bv 0 payload-length (native-endianness))
-  (bytevector-u32-set! command-bv 0 (assoc-ref %i3-message-types type) (native-endianness))
+  (bytevector-u32-set! command-bv 0 (list-index %i3-message-types type) (native-endianness))
 
   (call-with-values (lambda ()
                       (open-bytevector-output-port))
