@@ -6,6 +6,7 @@
   #:use-module (rnrs io ports)
   #:use-module ((srfi srfi-1)
                 #:select (take))
+  #:use-module (ice-9 match)
   #:use-module (ice-9 rdelim)
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 receive)
@@ -25,21 +26,18 @@
 
 (define %i3-event-types '(workspace output))
 
-(define %reply-parsers '(success-reply->scm
-                         workspaces-reply->scm
-                         success-reply->scm
-                         outputs-reply->scm
-                         tree-reply->scm
-                         marks-reply->scm
-                         bar-config-reply->scm
-                         version-reply->scm))
-
 (define-public (i3-reply->scm type payload)
   (define reply (json-string->scm (utf8->string payload)))
   
-  (define reply->scm (list-ref %reply-parsers type))
-  
-  (reply->scm reply))
+  (match type
+    (0 (success-reply->scm reply))
+    (1 (workspace-reply->scm reply))
+    (2 (success-reply->scm reply))
+    (3 (outputs-reply->scm reply))
+    (4 (tree-reply->scm reply))
+    (5 (marks-reply->scm reply))
+    (6 (bar-config-reply->scm reply))
+    (7 (version-reply->scm reply))))
 
 (define-public current-i3-connection
   (make-parameter #f))
@@ -100,7 +98,7 @@
 
   (receive (magic-string payload-len type)
       (unpack-header header)
-    (get-bytevector-n port payload-len)))
+    (i3-reply->scm type (get-bytevector-n port payload-len))))
 
 (define*-public (i3-msg type #:optional (payload "") (port (current-i3-connection)))
   "Convenience function to send and receive a message from I3.  Returns a JSON encoded bytevector"
