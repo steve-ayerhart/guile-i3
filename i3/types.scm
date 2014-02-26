@@ -11,12 +11,12 @@
                                             (map (lambda (f)
                                                    (if (string? f)
                                                        f
-                                                       (string->symbol (syntax->datum f))))
+                                                       (symbol->string (syntax->datum f))))
                                                  fields)))))
     (syntax-case stx ()
       ((_ name field ...)
        (with-syntax ((type (build-name #'name "<" #'name ">"))
-                     (cntr (build-name "make-" #'name))
+                     (cntr (build-name #'name "make-" #'name))
                      (pred (build-name #'name #'name "?"))
                      ((accessor ...)
                       (map (lambda (f)
@@ -32,6 +32,7 @@
              (define-public accessor
                (record-accessor type 'field))
              ...))))))
+
 
 (define-i3-type i3-version major minor patch human)
 (define-i3-type i3-rec x y width height)
